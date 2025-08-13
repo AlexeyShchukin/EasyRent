@@ -1,15 +1,15 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from src.listing.models import Listing
 from src.listing.permissions import IsOwnerOrReadOnly
 from src.listing.serializers import ListingSerializer
+from src.shared.permissions import IsLandlordOrReadOnly
 
 
 class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all().select_related('owner')
     serializer_class = ListingSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    permission_classes = [IsLandlordOrReadOnly, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         """
