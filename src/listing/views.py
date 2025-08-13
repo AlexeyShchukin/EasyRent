@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from src.listing.models import Listing
 from src.listing.permissions import IsOwnerOrReadOnly
-from src.serializers import ListingSerializer
+from src.listing.serializers import ListingSerializer
 
 
 class ListingViewSet(viewsets.ModelViewSet):
