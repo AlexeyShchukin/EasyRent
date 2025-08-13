@@ -1,15 +1,27 @@
+from rest_framework.filters import OrderingFilter, SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 
 from src.listing.models import Listing
-from src.listing.permissions import IsOwnerOrReadOnly
+from src.listing.permissions import IsOwnerOrReadOnly, IsLandlordOrReadOnly
 from src.listing.serializers import ListingSerializer
-from src.shared.permissions import IsLandlordOrReadOnly
 
 
 class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all().select_related('owner')
     serializer_class = ListingSerializer
     permission_classes = [IsLandlordOrReadOnly, IsOwnerOrReadOnly]
+
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filterset_fields = {
+        'price': ['gte', 'lte'],
+        'rooms': ['gte', 'lte'],
+        'city': ['exact'],
+        'district': ['exact'],
+        'property_type': ['exact'],
+    }
+    search_fields = ['title', 'description']
+    ordering_fields = ['price', 'created_at']
 
     def get_queryset(self):
         """
