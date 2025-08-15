@@ -74,11 +74,8 @@ class LogoutUserAPIView(APIView):
         refresh_token = request.COOKIES.get('refresh')
 
         if refresh_token:
-            try:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-            except Exception:
-                pass
+            token = RefreshToken(refresh_token)
+            token.blacklist()
 
         response.delete_cookie('access')
         response.delete_cookie('refresh')

@@ -102,6 +102,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
     ),
     'DEFAULT_PAGINATION_CLASS': 'src.listing.paginators.CustomCursorPaginator',
+    'EXCEPTION_HANDLER': 'src.exceptions.handlers.custom_exception_handler'
 }
 
 SIMPLE_JWT = {

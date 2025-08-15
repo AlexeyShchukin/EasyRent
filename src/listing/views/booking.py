@@ -7,6 +7,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import serializers
 
+from src.exceptions.exceptions import (
+    BookingOwnershipError,
+    BookingStatusError,
+    BookingRelationshipError
+)
 from src.listing.models import Booking, Listing
 from src.listing.permissions import IsRenter, IsOwnerOfBookingListing
 from src.listing.serializers import BookingSerializer, BookingCreateSerializer
@@ -113,31 +118,26 @@ class BookingViewSet(viewsets.ModelViewSet):
         """
         booking = self.get_object()
 
-        response = self._validate_booking_ownership(booking, listing_pk)
-        if response:
-            return response
+        self._validate_relationship(booking, listing_pk)
 
         if booking.renter != request.user:
-            return Response(
-                {'detail': 'You do not have permission to cancel this booking.'},
-                status=status.HTTP_403_FORBIDDEN
+            raise BookingOwnershipError(
+                "You do not have permission to cancel this booking."
             )
 
         if booking.status not in [
             Booking.BookingStatus.PENDING,
             Booking.BookingStatus.CONFIRMED
         ]:
-            return Response(
-                {'detail': 'Only pending or confirmed bookings can be cancelled.'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise BookingStatusError(
+                "Only pending or confirmed bookings can be cancelled."
             )
 
         current_date = date.today()
         time_to_checkin = (booking.start_date - current_date).days
         if time_to_checkin < 2:
-            return Response(
-                {'detail': 'Booking cannot be cancelled less than 2 days before check-in.'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise BookingStatusError(
+                "Booking cannot be cancelled less than 2 days before check-in."
             )
 
         booking.status = Booking.BookingStatus.CANCELLED
@@ -154,15 +154,9 @@ class BookingViewSet(viewsets.ModelViewSet):
         """
         booking = self.get_object()
 
-        response = self._validate_booking_ownership(booking, listing_pk)
-        if response:
-            return response
-
+        self._validate_relationship(booking, listing_pk)
         if booking.status != Booking.BookingStatus.PENDING:
-            return Response(
-                {'detail': 'Only pending bookings can be confirmed.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise BookingStatusError("Only pending bookings can be confirmed.")
 
         booking.status = Booking.BookingStatus.CONFIRMED
         booking.save()
@@ -178,14 +172,11 @@ class BookingViewSet(viewsets.ModelViewSet):
         """
         booking = self.get_object()
 
-        response = self._validate_booking_ownership(booking, listing_pk)
-        if response:
-            return response
+        self._validate_relationship(booking, listing_pk)
 
         if booking.status != Booking.BookingStatus.PENDING:
-            return Response(
-                {'detail': 'Only pending bookings can be rejected.'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise BookingStatusError(
+                "Only pending bookings can be confirmed."
             )
 
         booking.status = Booking.BookingStatus.REJECTED
@@ -195,10 +186,11 @@ class BookingViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK
         )
 
-    def _validate_booking_ownership(self, booking, listing_pk):
+    def _validate_relationship(self, booking, listing_pk):
+        """
+        Ensure the given booking is associated  with the specified listing.
+        """
         if str(booking.listing.id) != listing_pk:
-            return Response(
-                {'detail': 'Booking does not belong to this listing.'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise BookingRelationshipError(
+                "Booking does not belong to this listing."
             )
-        return None
