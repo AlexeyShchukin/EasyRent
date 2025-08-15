@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -110,15 +112,33 @@ class BookingViewSet(viewsets.ModelViewSet):
         Allows a renter to cancel their booking.
         """
         booking = self.get_object()
+
+        response = self._validate_booking_ownership(booking, listing_pk)
+        if response:
+            return response
+
         if booking.renter != request.user:
             return Response(
                 {'detail': 'You do not have permission to cancel this booking.'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        response = self._validate_booking_action(booking, listing_pk)
-        if response:
-            return response
+        if booking.status not in [
+            Booking.BookingStatus.PENDING,
+            Booking.BookingStatus.CONFIRMED
+        ]:
+            return Response(
+                {'detail': 'Only pending or confirmed bookings can be cancelled.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        current_date = date.today()
+        time_to_checkin = (booking.start_date - current_date).days
+        if time_to_checkin < 2:
+            return Response(
+                {'detail': 'Booking cannot be cancelled less than 2 days before check-in.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         booking.status = Booking.BookingStatus.CANCELLED
         booking.save()
@@ -134,9 +154,15 @@ class BookingViewSet(viewsets.ModelViewSet):
         """
         booking = self.get_object()
 
-        response = self._validate_booking_action(booking, listing_pk)
+        response = self._validate_booking_ownership(booking, listing_pk)
         if response:
             return response
+
+        if booking.status != Booking.BookingStatus.PENDING:
+            return Response(
+                {'detail': 'Only pending bookings can be confirmed.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         booking.status = Booking.BookingStatus.CONFIRMED
         booking.save()
@@ -152,9 +178,15 @@ class BookingViewSet(viewsets.ModelViewSet):
         """
         booking = self.get_object()
 
-        response = self._validate_booking_action(booking, listing_pk)
+        response = self._validate_booking_ownership(booking, listing_pk)
         if response:
             return response
+
+        if booking.status != Booking.BookingStatus.PENDING:
+            return Response(
+                {'detail': 'Only pending bookings can be rejected.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         booking.status = Booking.BookingStatus.REJECTED
         booking.save()
@@ -163,18 +195,10 @@ class BookingViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK
         )
 
-    def _validate_booking_action(self, booking, listing_pk):
-        """
-        Performs common validation for booking actions (confirm, reject, cancel).
-        """
+    def _validate_booking_ownership(self, booking, listing_pk):
         if str(booking.listing.id) != listing_pk:
             return Response(
                 {'detail': 'Booking does not belong to this listing.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if booking.status not in [Booking.BookingStatus.PENDING, Booking.BookingStatus.CONFIRMED]:
-            return Response(
-                {'detail': 'Booking cannot be processed in its current status.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         return None
