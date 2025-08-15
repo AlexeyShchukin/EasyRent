@@ -47,7 +47,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         role = validated_data.pop('role')
         user = User.objects.create_user(**validated_data)
 
-        if role == 'landlord':
+        if role.lower() == 'landlord':
             group = Group.objects.get(name='Landlord')
         else:
             group = Group.objects.get(name='Renter')
