@@ -4,10 +4,11 @@ from django.db import models
 
 class Booking(models.Model):
     class BookingStatus(models.TextChoices):
-        PENDING = 'Pending', 'Pending'
-        CONFIRMED = 'Confirmed', 'Confirmed'
-        REJECTED = 'Rejected', 'Rejected'
-        CANCELLED = 'Cancelled', 'Cancelled'
+        PENDING = 'PENDING', 'Pending'
+        CONFIRMED = 'CONFIRMED', 'Confirmed'
+        REJECTED = 'REJECTED', 'Rejected'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+        COMPLETED = 'COMPLETED', 'Completed'
 
     listing = models.ForeignKey(
         'Listing',
