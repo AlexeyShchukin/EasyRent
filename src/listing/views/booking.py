@@ -96,8 +96,8 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """
-        Associates the booking with the current user (renter)
-        and the listing from the URL.
+        Associates booking with current user (renter)
+        and listing id from URL.
         """
         listing = self.get_serializer_context().get('listing')
         if not listing:

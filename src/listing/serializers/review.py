@@ -27,7 +27,9 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """
-        Validate that the user has a completed booking for this listing.
+        Validate that user has completed booking for specific listing
+        and has not already submitted a review,
+        excepting cases with put and patch methods.
         """
         current_user = self.context['request'].user
         current_listing = self.context['listing']
@@ -42,4 +44,18 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "You can leave a review only after completed booking."
             )
+
+        queryset = Review.objects.filter(
+            listing=current_listing,
+            renter=current_user
+        )
+
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError(
+                {"non_field_errors": "You have already submitted a review for this listing."}
+            )
+
         return attrs

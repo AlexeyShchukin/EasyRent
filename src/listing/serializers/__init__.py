@@ -8,10 +8,13 @@ from src.listing.serializers.listing import (
     ListingDetailSerializer
 )
 
+from src.listing.serializers.review import ReviewSerializer
+
 __all__ = [
     'ListingListSerializer',
     'ListingCreateUpdateSerializer',
     'ListingDetailSerializer',
     'BookingCreateSerializer',
-    'BookingSerializer'
+    'BookingSerializer',
+    'ReviewSerializer'
 ]

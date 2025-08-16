@@ -1,3 +1,7 @@
+import logging
+import traceback
+
+from django.conf import settings
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,6 +14,8 @@ from src.exceptions.exceptions import (
     ErrorType,
     BookingRelationshipError
 )
+
+logger = logging.getLogger(__name__)
 
 
 def custom_exception_handler(exc, context):
@@ -53,6 +59,17 @@ def custom_exception_handler(exc, context):
 
         response.data['error_type'] = error_type.value
         return response
+
+    if settings.DEBUG:
+        return Response(
+            {
+                'detail': traceback.format_exc(),
+                'error_type': ErrorType.UNKNOWN_ERROR.value
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    logger.error(f"Unknown server error: {exc}", exc_info=True)
 
     return Response(
         {

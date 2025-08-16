@@ -42,3 +42,15 @@ class IsRenter(permissions.BasePermission):
         user = request.user
         is_renter = user.groups.filter(name='Renter').exists()
         return user.is_authenticated and is_renter
+
+
+class IsReviewOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Allows only the renter who left the review to edit it.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        return obj.renter == request.user
