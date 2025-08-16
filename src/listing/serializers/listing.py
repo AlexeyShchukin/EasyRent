@@ -40,6 +40,7 @@ class ListingListSerializer(serializers.ModelSerializer):
             'location',
             'number_of_rooms',
             'owner_username',
+            'is_active'
         )
         read_only_fields = ('id', 'owner_username')
 
