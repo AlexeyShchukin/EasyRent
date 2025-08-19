@@ -29,6 +29,12 @@ class Listing(models.Model):
         choices=PropertyType.choices
     )
     is_active = models.BooleanField(default=False)
+    rating = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        default=0.00
+    )
+    reviews_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

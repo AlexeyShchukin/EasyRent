@@ -5,6 +5,8 @@ from src.listing.models import Listing
 
 class ListingDetailSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)
+    rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
+    reviews_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Listing
@@ -17,6 +19,8 @@ class ListingDetailSerializer(serializers.ModelSerializer):
             'number_of_rooms',
             'property_type',
             'is_active',
+            'rating',
+            'reviews_count',
             'owner_username',
             'created_at',
             'updated_at',
@@ -30,6 +34,8 @@ class ListingDetailSerializer(serializers.ModelSerializer):
 
 class ListingListSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)
+    rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
+    reviews_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Listing
@@ -38,11 +44,13 @@ class ListingListSerializer(serializers.ModelSerializer):
             'title',
             'price',
             'location',
+            'rating',
+            'reviews_count',
             'number_of_rooms',
             'owner_username',
             'is_active'
         )
-        read_only_fields = ('id', 'owner_username')
+        read_only_fields = ('id',)
 
 
 class ListingCreateUpdateSerializer(serializers.ModelSerializer):
