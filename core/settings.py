@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
 
     # local apps
+    'core',
     'src.listing.apps.ListingConfig',
     'src.users.apps.AuthConfig'
 ]
