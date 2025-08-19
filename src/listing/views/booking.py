@@ -38,7 +38,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         elif self.action in ['create', 'cancel']:
             self.permission_classes = [IsRenter]
 
-        elif self.action in ['confirm', 'reject']:
+        elif self.action in ['confirm', 'reject', 'complete']:
             self.permission_classes = [
                 IsAuthenticated,
                 IsOwnerOfBookingListing
@@ -183,6 +183,33 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.save()
         return Response(
             {'detail': 'Booking rejected successfully.'},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'], url_path='complete')
+    def complete(self, request, pk=None, listing_pk=None):
+        """
+        Allows a landlord to set a booking status to 'COMPLETED'.
+        A booking can only be completed after the stay has finished.
+        """
+        booking = self.get_object()
+        self._validate_relationship(booking, listing_pk)
+        current_date = date.today()
+
+        if booking.status not in [Booking.BookingStatus.CONFIRMED]:
+            raise BookingStatusError(
+                "Only confirmed bookings can be completed."
+            )
+
+        if booking.end_date > current_date:
+            raise BookingStatusError(
+                "Booking cannot be completed before the end date of the stay."
+            )
+
+        booking.status = Booking.BookingStatus.COMPLETED
+        booking.save()
+        return Response(
+            {'detail': 'Booking marked as completed successfully.'},
             status=status.HTTP_200_OK
         )
 
