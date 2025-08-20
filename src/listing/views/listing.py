@@ -24,7 +24,7 @@ class ListingViewSet(viewsets.ModelViewSet):
         'property_type': ['exact'],
     }
     search_fields = ['title', 'description']
-    ordering_fields = ['price', 'created_at']
+    ordering_fields = ['price', 'created_at', 'reviews_count']
 
     def get_permissions(self):
         """
