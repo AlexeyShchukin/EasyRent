@@ -28,7 +28,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
         if start_date > end_date:
             raise serializers.ValidationError(
-                "End date must be after start date or same."
+                {"end_date": "End date must be after start date or same."}
             )
 
         listing = self.context.get('listing')
@@ -52,7 +52,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
         if overlapping_bookings.exists():
             raise serializers.ValidationError(
-                "This listing is already booked for the selected dates."
+                {"booking_dates": "This listing is already booked for the selected dates."}
             )
 
         return data

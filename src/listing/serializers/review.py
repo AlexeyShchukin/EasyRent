@@ -42,7 +42,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         if not has_completed_booking:
             raise serializers.ValidationError(
-                "You can leave a review only after completed booking."
+                {"booking_status": "You can leave a review only after completed booking."}
             )
 
         queryset = Review.objects.filter(
@@ -55,7 +55,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         if queryset.exists():
             raise serializers.ValidationError(
-                {"non_field_errors": "You have already submitted a review for this listing."}
+                {"review": "You have already submitted a review for this listing."}
             )
 
         return attrs

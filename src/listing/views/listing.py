@@ -4,7 +4,7 @@ from rest_framework import viewsets
 
 from rest_framework.permissions import AllowAny
 from src.listing.models import Listing
-from src.listing.permissions import IsOwnerOrReadOnly, IsLandlordOrReadOnly
+from src.listing.permissions import IsOwner, IsLandlordOrReadOnly
 from src.listing.serializers import (
     ListingListSerializer,
     ListingCreateUpdateSerializer,
@@ -13,7 +13,7 @@ from src.listing.serializers import (
 
 
 class ListingViewSet(viewsets.ModelViewSet):
-    queryset = Listing.objects.all().select_related('owner')
+    queryset = Listing.objects.select_related('owner').all()
 
 
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -33,8 +33,8 @@ class ListingViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             self.permission_classes = [IsLandlordOrReadOnly]
 
-        elif self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsOwnerOrReadOnly]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsOwner]
 
         else:
             self.permission_classes = [AllowAny]

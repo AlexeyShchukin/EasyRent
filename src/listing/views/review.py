@@ -19,7 +19,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         listing_pk = self.kwargs.get('listing_pk')
-        return Review.objects.filter(listing_id=listing_pk)
+        return (
+            Review.objects.filter(listing_id=listing_pk)
+            .select_related('listing', 'renter')
+        )
 
     def get_serializer_context(self):
         """
