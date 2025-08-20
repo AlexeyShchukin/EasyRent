@@ -8,6 +8,7 @@ class ErrorType(str, Enum):
     VALIDATION_ERROR = "validation_error"
     NOT_FOUND = "not_found"
     PERMISSION_ERROR = "permission_error"
+    AUTHENTICATION_ERROR = "authentication_error"
     INVALID_STATUS = "invalid_status"
     UNKNOWN_ERROR = "unknown_error"
 

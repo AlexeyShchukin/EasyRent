@@ -17,47 +17,44 @@ from src.exceptions.exceptions import (
 
 logger = logging.getLogger(__name__)
 
+CUSTOM_ERROR_MAPPING = {
+    BookingRelationshipError: (
+        status.HTTP_400_BAD_REQUEST,
+        ErrorType.VALIDATION_ERROR
+    ),
+    BookingStatusError: (
+        status.HTTP_400_BAD_REQUEST,
+        ErrorType.INVALID_STATUS
+    ),
+    BookingOwnershipError: (
+        status.HTTP_403_FORBIDDEN,
+        ErrorType.PERMISSION_ERROR
+    ),
+}
+
 
 def custom_exception_handler(exc, context):
+    if type(exc) in CUSTOM_ERROR_MAPPING:
+        http_status, error_type = CUSTOM_ERROR_MAPPING[type(exc)]
+        return Response(
+            {
+                'detail': str(exc),
+                'error_type': error_type.value
+            },
+            status=http_status
+        )
+
     response = exception_handler(exc, context)
-
-    if isinstance(exc, BookingRelationshipError):
-        return Response(
-            {
-                'detail': str(exc),
-                'error_type': ErrorType.VALIDATION_ERROR.value
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    if isinstance(exc, BookingOwnershipError):
-        return Response(
-            {
-                'detail': str(exc),
-                'error_type': ErrorType.PERMISSION_ERROR.value
-            },
-            status=status.HTTP_403_FORBIDDEN
-        )
-
-    if isinstance(exc, BookingStatusError):
-        return Response(
-            {
-                'detail': str(exc),
-                'error_type': ErrorType.INVALID_STATUS.value
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
     if response:
-        error_type = ErrorType.UNKNOWN_ERROR
-        if response.status_code == 400:
-            error_type = ErrorType.VALIDATION_ERROR
-        elif response.status_code == 404:
-            error_type = ErrorType.NOT_FOUND
-        elif response.status_code == 403:
-            error_type = ErrorType.PERMISSION_ERROR
-
-        response.data['error_type'] = error_type.value
+        status_to_error_type = {
+            400: ErrorType.VALIDATION_ERROR,
+            401: ErrorType.AUTHENTICATION_ERROR,
+            403: ErrorType.PERMISSION_ERROR,
+            404: ErrorType.NOT_FOUND,
+        }
+        response.data['error_type'] = status_to_error_type.get(
+            response.status_code, ErrorType.UNKNOWN_ERROR
+        ).value
         return response
 
     if settings.DEBUG:
