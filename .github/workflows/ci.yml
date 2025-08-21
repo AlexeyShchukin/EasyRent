@@ -1,0 +1,142 @@
+name: AWS EC2(via aws eic)
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      APP_DIR: ${{secrets.APP_DIR}}
+      RAW: ${{secrets.EC2_HOST}}
+      CLEAN_HOST: $(printf '%s' "$RAW" | tr -d '\r' | awk '{print $1}' | sed 's/^"//; s/"$//')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-region: ${{secrets.AWS_REGION}}
+
+      - name: Resolve AZ Instance
+        id: az
+        run: |
+          AZ=$(aws ec2 describe-instances \
+          --instance-ids "${{secrets.EC2_INSTANCE_ID}}" \
+          --query 'Reservations[0].Instances[0].Placement.AvailabilityZone' \
+          --output text)
+          
+          echo "AZ=$AZ"
+          echo "AZ=$AZ" >> $GITHUB_OUTPUT
+
+      - name: Build && Push Ephemeral SSH key via EC2 Instance Connect(EIC)
+        run: |
+          ssh-keygen -t ed25519 -N '' -f eic_key -C "gh-actions-ephemeral"
+          aws ec2-instance-connect send-ssh-public-key \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --availability-zone "${{ steps.az.outputs.AZ }}" \
+            --instance-os-user "ec2-user" \
+            --ssh-public-key "$(tr -d '\r' < eic_key.pub)"
+
+      - name: Trust EC2 Ephemeral Key
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          ssh-keyscan -T 10 -H "$CLEAN_HOST" >> ~/.ssh/known_hosts
+          IP=$(getent hosts "$CLEAN_HOST" | awk '/STREAM/ {print $1; exit}') || true
+          if [ -n "$IP:-" ]; then ssh-keyscan -T 10 -H "IP" >> ~/.ssh/known_hosts || true; fi
+          chmod 644 ~/ssh/known_hosts
+
+      - name: Prepare AWS Instance With Required Tools
+        run: |
+          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_user}}"@"$CLEAN_HOST" bash -s <<'EOSH'
+          
+          set -euo pipefail
+          
+          if ! command -v git >/dev/null 2>&1; then
+            sudo dnf install -y git
+          fi
+
+          if ! command -v rsync >/dev/null 2>&1; then
+            sudo dnf install -y rsync
+          fi
+          
+          if ! command -v docker >/dev/null 2>&1; then
+            sudo dnf install -y docker
+            sudo systemctl enable --now docker
+          else
+            sudo systemctl enable --now docker || true
+          fi
+          
+          sudo usermod -aG docker "${{secrets.EC2_USER}}" || true
+          
+          
+          if ! docker compose version >/dev/null 2>&1; then
+            if ! command -v curl >/dev/null 2>&1; then
+              sudo dnf insstall -y curl
+            fi
+            sudo mkdir -p /usr/local/lib/docker/cli-plugins
+            sudo curl -sSL "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64" \
+            -o /usr/local/lib/docker/cli-plugins/docker-compose
+          
+            sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+            docker compose version
+          fi
+          
+          docker --version || true
+          git --version || true
+          rsync --version | head -n 1 || true
+          
+          sudo install -d  -o "${{secrets.EC2_USER}}" -g "${{secrets.EC2_USER}}" -m 755 "$APP_DIR"
+          EOSH
+
+      - name: Rsync Project to AWS EC2 Instance
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --filter='P static/' \
+            -e "ssh -i eic-key -o IdentitiesOnly=yes" \
+            ./ "${{secrets.EC2_USER}}"@"$CLEAN_HOST":"$APP_DIR"
+
+      - name: Create .env file
+        run: |
+          cat > .env <<'EOF'
+          DEBUG=${{ secrets.DEBUG }}
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          EOF
+
+      - name: Upload .env file to AWS EC2 Instance
+        run: |
+          scp -i eic-key -o IdentitiesOnly=yes .env "${{secrets.EC2_USER}}"@"$CLEAN_HOST":"$APP_DIR"/.env
+
+      - name: Deploy to AWS EC2 Instance && (re)start containers
+        run: |
+          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_USER}}"@"$CLEAN_HOST" bash -s <<'EOSH'
+          set -euo pipefail
+          
+          cd "$APP_DIR"
+          sudo docker compose pull
+          sudo docker compose --env-file .env up -d --build
+          sudo docker system prune -f
+          EOSH
+
+      - name: Show AWS EC2 Running Containers
+        run: |
+          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_USER}}"@"$CLEAN_HOST" \
+          "sudo docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.CreatedAt}}'"
