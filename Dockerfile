@@ -27,7 +27,6 @@ COPY --from=builder /install /usr/local
 
 COPY core core
 COPY src src
-COPY templates templates
 COPY manage.py manage.py
 COPY start.sh start.sh
 
