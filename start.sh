@@ -4,5 +4,6 @@ python manage.py migrate
 echo "Migrations completed"
 
 python manage.py ensure_groups
+python manage.py collectstatic
 
 gunicorn core.wsgi:application --bind 0.0.0.0:8000
