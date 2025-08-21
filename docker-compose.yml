@@ -23,7 +23,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8000:8000"
+      - "80:8000"
     command: ["./start.sh"]
     volumes:
       - .:/app
@@ -34,8 +34,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 2G
+          cpus: "1"
+          memory: 1G
 
 volumes:
   mysql_data:
