@@ -51,10 +51,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          touch ~/.ssh/known_hosts && chmod 644 ~/ssh/known_hosts
           ssh-keyscan -T 10 -H "$RAW" >> ~/.ssh/known_hosts
           IP=$(getent hosts "$RAW" | awk '/STREAM/ {print $1; exit}') || true
           if [ -n "$IP:-" ]; then ssh-keyscan -T 10 -H "IP" >> ~/.ssh/known_hosts || true; fi
-          chmod 644 ~/ssh/known_hosts
 
       - name: Prepare AWS Instance With Required Tools
         run: |
