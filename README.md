@@ -7,7 +7,7 @@ It provides a RESTful API that allows users to publish rental listings (as landl
 
 ## Tech Stack
 
-- **Python**: 3.11+
+- **Python**: 3.13+
 - **Django**: 5.2.5+
 - **Django REST Framework**: 3.16.1+
 - **MySQL**: 8.0+
@@ -54,9 +54,10 @@ docker-compose up -d --build
 ```
 This will:  
 Build Docker images  
+Start the db  
 Apply database migrations  
 Set basic groups with permissions
-Start the db and app services  
+Start app  
 
 ### 5. Accessing the API
 After startup, the API is available at: http://localhost:8000/api/

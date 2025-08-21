@@ -2,8 +2,6 @@ services:
   db:
     image: mysql:8.0
     container_name: easyrent_db
-#    env_file:
-#      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
@@ -19,18 +17,6 @@ services:
       timeout: 5s
       retries: 5
 
-  migrate:
-    build: .
-    container_name: easyrent_migrate
-    command: ["./migrate.sh"]
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - .env
-    volumes:
-      - .:/app
-
   app:
     build: .
     container_name: easyrent_app
@@ -38,6 +24,7 @@ services:
       - .env
     ports:
       - "8000:8000"
+    command: ["./start.sh"]
     volumes:
       - .:/app
     depends_on:
