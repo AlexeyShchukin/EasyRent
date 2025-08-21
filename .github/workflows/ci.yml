@@ -13,7 +13,7 @@ jobs:
     env:
       APP_DIR: ${{secrets.APP_DIR}}
       RAW: ${{secrets.EC2_HOST}}
-      CLEAN_HOST: $(printf '%s' "$RAW" | tr -d '\r' | awk '{print $1}' | sed 's/^"//; s/"$//')
+#      CLEAN_HOST: $(printf '%s' "$RAW" | tr -d '\r' | awk '{print $1}' | sed 's/^"//; s/"$//')
 
     steps:
       - name: Checkout
@@ -51,14 +51,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          ssh-keyscan -T 10 -H "$CLEAN_HOST" >> ~/.ssh/known_hosts
-          IP=$(getent hosts "$CLEAN_HOST" | awk '/STREAM/ {print $1; exit}') || true
+          ssh-keyscan -T 10 -H "$RAW" >> ~/.ssh/known_hosts
+          IP=$(getent hosts "$RAW" | awk '/STREAM/ {print $1; exit}') || true
           if [ -n "$IP:-" ]; then ssh-keyscan -T 10 -H "IP" >> ~/.ssh/known_hosts || true; fi
           chmod 644 ~/ssh/known_hosts
 
       - name: Prepare AWS Instance With Required Tools
         run: |
-          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_user}}"@"$CLEAN_HOST" bash -s <<'EOSH'
+          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_user}}"@"$RAW" bash -s <<'EOSH'
           
           set -euo pipefail
           
@@ -106,7 +106,7 @@ jobs:
             --exclude='.github/' \
             --filter='P static/' \
             -e "ssh -i eic-key -o IdentitiesOnly=yes" \
-            ./ "${{secrets.EC2_USER}}"@"$CLEAN_HOST":"$APP_DIR"
+            ./ "${{secrets.EC2_USER}}"@"$RAW":"$APP_DIR"
 
       - name: Create .env file
         run: |
@@ -123,11 +123,11 @@ jobs:
 
       - name: Upload .env file to AWS EC2 Instance
         run: |
-          scp -i eic-key -o IdentitiesOnly=yes .env "${{secrets.EC2_USER}}"@"$CLEAN_HOST":"$APP_DIR"/.env
+          scp -i eic-key -o IdentitiesOnly=yes .env "${{secrets.EC2_USER}}"@"$RAW":"$APP_DIR"/.env
 
       - name: Deploy to AWS EC2 Instance && (re)start containers
         run: |
-          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_USER}}"@"$CLEAN_HOST" bash -s <<'EOSH'
+          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_USER}}"@"$RAW" bash -s <<'EOSH'
           set -euo pipefail
           
           cd "$APP_DIR"
@@ -138,5 +138,5 @@ jobs:
 
       - name: Show AWS EC2 Running Containers
         run: |
-          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_USER}}"@"$CLEAN_HOST" \
+          ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_USER}}"@"$RAW" \
           "sudo docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.CreatedAt}}'"
