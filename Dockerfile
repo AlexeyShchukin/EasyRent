@@ -30,7 +30,7 @@ COPY src src
 COPY manage.py manage.py
 COPY start.sh start.sh
 
-RUN chmod +x start.sh
+RUN chmod 700 start.sh
 
 USER myuser
 
