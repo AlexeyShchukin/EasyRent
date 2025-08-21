@@ -55,7 +55,7 @@ jobs:
           ssh-keyscan -T 10 -H "$RAW" >> ~/.ssh/known_hosts
           IP=$(getent hosts "$RAW" | awk '/STREAM/ {print $1; exit}') || true
           if [ -n "${IP:-}" ]; then ssh-keyscan -T 10 -H "$IP" >> ~/.ssh/known_hosts || true; fi
-
+          
       - name: Prepare AWS Instance With Required Tools
         run: |
           ssh -i eic-key -o IdentitiesOnly=yes "${{secrets.EC2_user}}"@"$RAW" bash -s <<'EOSH'
