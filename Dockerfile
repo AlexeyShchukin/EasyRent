@@ -28,9 +28,9 @@ COPY --from=builder /install /usr/local
 COPY core core
 COPY src src
 COPY manage.py manage.py
-COPY start.sh start.sh
+# COPY start.sh start.sh
 
-RUN chmod 700 start.sh
+# RUN chmod 700 start.sh
 
 USER myuser
 
