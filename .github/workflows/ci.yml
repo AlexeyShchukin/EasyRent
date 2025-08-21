@@ -40,12 +40,12 @@ jobs:
 
       - name: Build && Push Ephemeral SSH key via EC2 Instance Connect(EIC)
         run: |
-          ssh-keygen -t ed25519 -N '' -f eic-key -C "git-hub-actions-ephemeral"
-          aws ec2-instance-connect send-ssh-public-key
-            --instance-id "${{secrets.EC2_INSTANCE_ID}}"
-            --availability-zone "${{steps.az.outputs.AZ}}"
-            --instance-os-user "${{secrets.EC2_USER}}"
-            --ssh-public-key "$(tr -d '\r' < eic-key.pub)"
+          ssh-keygen -t ed25519 -N '' -f eic_key -C "gh-actions-ephemeral"
+          aws ec2-instance-connect send-ssh-public-key \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --availability-zone "${{ steps.az.outputs.AZ }} \
+            --instance-os-user "ec2-user" \
+            --ssh-public-key "$(tr -d '\r' < eic_key.pub)"
 
       - name: Trust EC2 Ephemeral Key
         run: |
