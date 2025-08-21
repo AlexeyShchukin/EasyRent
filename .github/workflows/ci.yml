@@ -43,7 +43,7 @@ jobs:
           ssh-keygen -t ed25519 -N '' -f eic_key -C "gh-actions-ephemeral"
           aws ec2-instance-connect send-ssh-public-key \
             --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
-            --availability-zone "${{ steps.az.outputs.AZ }} \
+            --availability-zone "${{ steps.az.outputs.AZ }}" \
             --instance-os-user "ec2-user" \
             --ssh-public-key "$(tr -d '\r' < eic_key.pub)"
 
