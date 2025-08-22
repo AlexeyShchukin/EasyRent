@@ -25,7 +25,7 @@ services:
     expose:
       - "8000"
     command: >
-      sh -c "mkdir -p /app/static && chown myuser:myuser /app/static \
+      sh -c "mkdir -p /app/static && chown myuser:myuser /app/static && \
       su myuser -c 'python manage.py migrate \
       && python manage.py ensure_groups \
       && python manage.py collectstatic --noinput \
