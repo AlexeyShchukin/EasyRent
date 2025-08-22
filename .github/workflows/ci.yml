@@ -83,7 +83,7 @@ jobs:
           
           if ! docker compose version >/dev/null 2>&1; then
             if ! command -v curl >/dev/null 2>&1; then
-              sudo dnf insstall -y curl
+              sudo dnf install -y curl
             fi
             sudo mkdir -p /usr/local/lib/docker/cli-plugins
             sudo curl -sSL "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64" \
