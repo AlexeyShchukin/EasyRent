@@ -25,11 +25,11 @@ services:
     expose:
       - "8000"
     command: >
-      sh -c "mkdir -p /app/static && chown myuser:myuser /app/static \
-      && python manage.py migrate \
+      sh -c "mkdir -p /app/static && chown myuser:myuser /app/static && \
+      su myuser -c 'python manage.py migrate \
       && python manage.py ensure_groups \
       && python manage.py collectstatic --noinput \
-      && gunicorn core.wsgi:application --bind 0.0.0.0:8000"
+      && gunicorn core.wsgi:application --bind 0.0.0.0:8000'"
     volumes:
       - static_volume:/app/static
     depends_on:
