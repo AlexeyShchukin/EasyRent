@@ -114,7 +114,7 @@ jobs:
           cat > .env <<'EOF'
           DEBUG=${{ secrets.DEBUG }}
           SECRET_KEY=${{ secrets.SECRET_KEY }}
-          ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+          ALLOWED_HOSTS="${{ secrets.ALLOWED_HOSTS }},app"
           DB_NAME=${{ secrets.DB_NAME }}
           DB_HOST=${{ secrets.DB_HOST }}
           DB_USER=${{ secrets.DB_USER }}
