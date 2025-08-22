@@ -29,6 +29,6 @@ COPY core core
 COPY src src
 COPY manage.py manage.py
 
-USER myuser
+USER root
 
 EXPOSE 8000
