@@ -74,19 +74,23 @@ jobs:
 
           set -euo pipefail
 
-          if command -v apt-get >/dev/null 2>&1; then
+          if command -v apt-get >/dev/null 2>&1
+          then
               PM="apt-get"
               UPDATE="sudo apt-get update -y"
               INSTALL="sudo apt-get install -y"
-          elif command -v apt >/dev/null 2>&1; then
+          elif command -v apt >/dev/null 2>&1
+          then
               PM=apt
               UPDATE="sudo apt update -y"
               INSTALL="sudo apt install -y"
-          elif command -v dnf >/dev/null 2>&1; then
+          elif command -v dnf >/dev/null 2>&1
+          then
               PM="dnf"
               UPDATE="sudo dnf makecache"
               INSTALL="sudo dnf install -y"
-          elif command -v yum >/dev/null 2>&1; then
+          elif command -v yum >/dev/null 2>&1
+          then
               PM="yum"
               UPDATE="sudo yum makecache"
               INSTALL="sudo yum install -y"
@@ -104,13 +108,15 @@ jobs:
             fi
           done
 
-          if command -v systemctl >/dev/null 2>&1; then
+          if command -v systemctl >/dev/null 2>&1
+          then
             sudo systemctl enable --now docker || true
           fi
 
           sudo usermod -aG docker "$EC2_USER" || true
 
-          if ! docker compose version >/dev/null 2>&1; then
+          if ! docker compose version >/dev/null 2>&1
+          then
             sudo mkdir -p /usr/local/lib/docker/cli-plugins
             sudo curl -sSL "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64" \
             -o /usr/local/lib/docker/cli-plugins/docker-compose
