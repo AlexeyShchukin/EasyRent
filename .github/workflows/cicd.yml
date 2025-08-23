@@ -69,7 +69,7 @@ jobs:
 
       - name: Prepare AWS Instance With Required Tools
         run: |
-          ssh -i eic_key -o IdentitiesOnly=yes "$EC2_USER"@"$RAW" bash -s <<EOSH
+          ssh -i eic_key -o IdentitiesOnly=yes "$EC2_USER"@"$RAW" bash -s <<'EOSH'
           
           set -euo pipefail
           
@@ -77,6 +77,10 @@ jobs:
               PM="apt-get"
               UPDATE="sudo apt-get update -y"
               INSTALL="sudo apt-get install -y"
+          elif command -v apt >/dev/null 2>&1; then
+              PM=apt
+              UPDATE="sudo apt update -y"
+              INSTALL="sudo apt install -y"
           elif command -v dnf >/dev/null 2>&1; then
               PM="dnf"
               UPDATE="sudo dnf makecache"
@@ -93,7 +97,7 @@ jobs:
           echo "Using package manager: $PM"
           $UPDATE
           
-          for pkg in git rsync curl docker; do
+          for pkg in git rsync curl docker.io; do
               if ! command -v $pkg >/dev/null 2>&1; then
                   $INSTALL $pkg
               fi
@@ -140,7 +144,7 @@ jobs:
 
       - name: Deploy to AWS EC2 Instance && (re)start containers
         run: |
-          ssh -i eic_key -o IdentitiesOnly=yes "$EC2_USER"@"$RAW" bash -s <<EOSH
+          ssh -i eic_key -o IdentitiesOnly=yes "$EC2_USER"@"$RAW" bash -s <<'EOSH'
           set -euo pipefail
           
           cd "$APP_DIR"
