@@ -1,7 +1,7 @@
 name: AWS EC2(via aws eic)
 on:
   push:
-    branches: [main]
+    branches: [prod]
 
 concurrency:
   group: deploy-main
@@ -132,8 +132,8 @@ jobs:
           set -euo pipefail
           
           cd "$APP_DIR"
-          sudo docker compose pull
-          sudo docker compose --env-file .env up -d --build
+          sudo docker compose -f docker-compose-prod.yml pull
+          sudo docker compose -f docker-compose-prod.yml --env-file .env up -d --build
           sudo docker system prune -f
           EOSH
 
