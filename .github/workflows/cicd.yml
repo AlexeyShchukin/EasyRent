@@ -71,9 +71,9 @@ jobs:
         run: |
           ssh -i eic_key -o IdentitiesOnly=yes "${{ secrets.EC2_USER }}"@"$RAW" \
           "EC2_USER='${{ secrets.EC2_USER }}' APP_DIR='${{ secrets.APP_DIR }}' bash -s" <<-EOSH
-          
+
           set -euo pipefail
-          
+
           if command -v apt-get >/dev/null 2>&1; then
               PM="apt-get"
               UPDATE="sudo apt-get update -y"
@@ -94,35 +94,35 @@ jobs:
               echo "Unsupported OS"
               exit 1
           fi
-          
+
           echo "Using package manager: $PM"
           $UPDATE
-          
+
           for pkg in git rsync curl docker.io; do
-              if ! command -v $pkg >/dev/null 2>&1; then
-                  $INSTALL $pkg
-              fi
+            if ! command -v $pkg >/dev/null 2>&1; then
+              $INSTALL $pkg
+            fi
           done
 
           if command -v systemctl >/dev/null 2>&1; then
-              sudo systemctl enable --now docker || true
+            sudo systemctl enable --now docker || true
           fi
-          
+
           sudo usermod -aG docker "$EC2_USER" || true
-          
+
           if ! docker compose version >/dev/null 2>&1; then
             sudo mkdir -p /usr/local/lib/docker/cli-plugins
             sudo curl -sSL "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64" \
             -o /usr/local/lib/docker/cli-plugins/docker-compose
-          
+
             sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
             docker compose version
           fi
-          
+
           docker --version || true
           git --version || true
           rsync --version | head -n 1 || true
-          
+
           sudo install -d  -o "$EC2_USER" -g "$EC2_USER" -m 755 "$APP_DIR"
           EOSH
 
@@ -147,7 +147,7 @@ jobs:
         run: |
           ssh -i eic_key -o IdentitiesOnly=yes "${{ secrets.EC2_USER }}"@"$RAW" bash -s <<-EOSH
           set -euo pipefail
-          
+
           cd "$APP_DIR"
           sudo docker compose -f docker-compose-prod.yml pull
           sudo docker compose -f docker-compose-prod.yml --env-file .env up -d
