@@ -56,7 +56,7 @@ This will:
 Build Docker images  
 Start the db  
 Apply database migrations  
-Set basic groups with permissions
+Set basic groups with permissions  
 Start app  
 
 ### 5. Accessing the API
