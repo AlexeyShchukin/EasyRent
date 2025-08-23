@@ -55,7 +55,7 @@ jobs:
           aws ec2-instance-connect send-ssh-public-key \
             --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
             --availability-zone "${{ steps.az.outputs.AZ }}" \
-            --instance-os-user "ec2-user" \
+            --instance-os-user "${{ secrets.EC2_USER }}" \
             --ssh-public-key "$(tr -d '\r' < eic_key.pub)"
 
       - name: Trust EC2 Ephemeral Key
