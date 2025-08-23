@@ -69,7 +69,7 @@ jobs:
 
       - name: Prepare AWS Instance With Required Tools
         run: |
-          ssh -i eic_key -o IdentitiesOnly=yes "$EC2_USER"@"$RAW" bash -s <<EOSH
+          ssh -i eic_key -o IdentitiesOnly=yes "$EC2_USER"@"$RAW" bash -s <<'EOSH'
           
           set -euo pipefail
           
@@ -140,7 +140,7 @@ jobs:
 
       - name: Deploy to AWS EC2 Instance && (re)start containers
         run: |
-          ssh -i eic_key -o IdentitiesOnly=yes "$EC2_USER"@"$RAW" bash -s <<EOSH
+          ssh -i eic_key -o IdentitiesOnly=yes "$EC2_USER"@"$RAW" bash -s <<'EOSH'
           set -euo pipefail
           
           cd "$APP_DIR"
