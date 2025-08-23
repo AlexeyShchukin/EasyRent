@@ -1,25 +1,35 @@
-name: AWS EC2(via aws eic)
+name: CI/CD Workflow (DockerHub + AWS EC2 via EIC)
+
 on:
   push:
-    branches: [prod]
+    branches: [main]
 
 concurrency:
   group: deploy-main
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      APP_DIR: ${{secrets.APP_DIR}}
-      RAW: ${{secrets.EC2_HOST}}
+      APP_DIR: ${{ secrets.APP_DIR }}
+      RAW: ${{ secrets.EC2_HOST }}
       EC2_USER: ${{ secrets.EC2_USER }}
-#      CLEAN_HOST: $(printf '%s' "$RAW" | tr -d '\r' | awk '{print $1}' | sed 's/^"//; s/"$//')
 
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
-        with: {fetch-depth: 0}
+        with:
+          fetch-depth: 0
+
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/app:latest .
+
+      - name: Login to Docker Hub
+        run: echo '${{ secrets.DOCKER_PASSWORD }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
+
+      - name: Push image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/app:latest
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -100,15 +110,6 @@ jobs:
           sudo install -d  -o "$EC2_USER" -g "$EC2_USER" -m 755 "$APP_DIR"
           EOSH
 
-      - name: Rsync Project to AWS EC2 Instance
-        run: |
-          rsync -az --delete \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --filter='P static/' \
-            -e "ssh -i eic_key -o IdentitiesOnly=yes" \
-            ./ "$EC2_USER"@"$RAW":"$APP_DIR"/
-
       - name: Create .env file
         run: |
           cat > .env <<'EOF'
@@ -133,7 +134,7 @@ jobs:
           
           cd "$APP_DIR"
           sudo docker compose -f docker-compose-prod.yml pull
-          sudo docker compose -f docker-compose-prod.yml --env-file .env up -d --build
+          sudo docker compose -f docker-compose-prod.yml --env-file .env up -d
           sudo docker system prune -f
           EOSH
 
