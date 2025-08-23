@@ -71,7 +71,7 @@ jobs:
         run: |
 
           ssh -i eic_key -o IdentitiesOnly=yes "${{ secrets.EC2_USER }}"@"$RAW" \
-          "EC2_USER='${{ secrets.EC2_USER }}' APP_DIR='${{ secrets.APP_DIR }}' bash -s <<EOSH
+          "EC2_USER='${{ secrets.EC2_USER }}' APP_DIR='${{ secrets.APP_DIR }}' bash -s" <<EOSH
           
           set -euo pipefail
           
@@ -148,7 +148,6 @@ jobs:
         run: |
 
           ssh -i eic_key -o IdentitiesOnly=yes "${{ secrets.EC2_USER }}"@"$RAW" bash -s <<EOSH
-
           set -euo pipefail
           
           cd "$APP_DIR"
