@@ -55,7 +55,7 @@ jobs:
           aws ec2-instance-connect send-ssh-public-key \
             --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
             --availability-zone "${{ steps.az.outputs.AZ }}" \
-            --instance-os-user "${{ secrets.EC2_USER }}" \
+            --instance-os-user "$EC2_USER" \
             --ssh-public-key "$(tr -d '\r' < eic_key.pub)"
 
       - name: Trust EC2 Ephemeral Key
@@ -73,28 +73,39 @@ jobs:
           
           set -euo pipefail
           
-          if ! command -v git >/dev/null 2>&1; then
-            sudo dnf install -y git
-          fi
-
-          if ! command -v rsync >/dev/null 2>&1; then
-            sudo dnf install -y rsync
+          if command -v apt-get >/dev/null 2>&1; then
+              PM="apt-get"
+              UPDATE="sudo apt-get update -y"
+              INSTALL="sudo apt-get install -y"
+          elif command -v dnf >/dev/null 2>&1; then
+              PM="dnf"
+              UPDATE="sudo dnf makecache"
+              INSTALL="sudo dnf install -y"
+          elif command -v yum >/dev/null 2>&1; then
+              PM="yum"
+              UPDATE="sudo yum makecache"
+              INSTALL="sudo yum install -y"
+          else
+              echo "Unsupported OS"
+              exit 1
           fi
           
-          if ! command -v docker >/dev/null 2>&1; then
-            sudo dnf install -y docker
-            sudo systemctl enable --now docker
-          else
-            sudo systemctl enable --now docker || true
+          echo "Using package manager: $PM"
+          $UPDATE
+          
+          for pkg in git rsync curl docker; do
+              if ! command -v $pkg >/dev/null 2>&1; then
+                  $INSTALL $pkg
+              fi
+          done
+
+          if command -v systemctl >/dev/null 2>&1; then
+              sudo systemctl enable --now docker || true
           fi
           
           sudo usermod -aG docker "$EC2_USER" || true
           
-          
           if ! docker compose version >/dev/null 2>&1; then
-            if ! command -v curl >/dev/null 2>&1; then
-              sudo dnf install -y curl
-            fi
             sudo mkdir -p /usr/local/lib/docker/cli-plugins
             sudo curl -sSL "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64" \
             -o /usr/local/lib/docker/cli-plugins/docker-compose
