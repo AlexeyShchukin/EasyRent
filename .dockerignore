@@ -26,7 +26,8 @@ node_modules/
 
 # Docker
 docker/db-init/
-Dockerfile
+
+Dockerfile*
 docker-compose*.yml
 
 # Django
