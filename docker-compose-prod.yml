@@ -7,20 +7,16 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h ${DB_HOST} -p${DB_PASSWORD} || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h db -p${DB_PASSWORD} || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile-prod
+    image: shchukinalex/app:latest
     container_name: easyrent_app
     env_file:
       - .env
