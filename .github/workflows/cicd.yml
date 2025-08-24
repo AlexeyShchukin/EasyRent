@@ -70,9 +70,13 @@ jobs:
       - name: Prepare AWS Instance With Required Tools
         run: |
           ssh -i eic_key -o IdentitiesOnly=yes "${{ secrets.EC2_USER }}"@"$RAW" \
-          "EC2_USER='${{ secrets.EC2_USER }}' APP_DIR='${{ secrets.APP_DIR }}' bash -s" <<-EOSH
+          "export EC2_USER='${{ secrets.EC2_USER }}' APP_DIR='${{ secrets.APP_DIR }}'; bash -s" <<-EOSH
 
           set -euo pipefail
+
+          PM=""
+          UPDATE=""
+          INSTALL=""
 
           if command -v apt-get >/dev/null 2>&1
           then
@@ -102,11 +106,15 @@ jobs:
           echo "Using package manager: $PM"
           $UPDATE
 
-          for pkg in git rsync curl docker.io; do
-            if ! command -v $pkg >/dev/null 2>&1; then
-              $INSTALL $pkg
-            fi
-          done
+          if [ -n "$UPDATE" ] && [ -n "$INSTALL" ]; then
+              $UPDATE
+
+            for pkg in git rsync curl docker.io; do
+              if ! command -v $pkg >/dev/null 2>&1; then
+                $INSTALL $pkg
+              fi
+            done
+          fi
 
           if command -v systemctl >/dev/null 2>&1
           then
