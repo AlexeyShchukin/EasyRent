@@ -74,7 +74,7 @@ jobs:
 
           set -euo pipefail
 
-          PACKAGES="git rsync curl docker.io"
+          PACKAGES="git curl docker.io"
           PM=""
           UPDATE=""
           INSTALL=""
@@ -132,6 +132,11 @@ jobs:
 
           sudo install -d  -o "$EC2_USER" -g "$EC2_USER" -m 755 "$APP_DIR"
           EOSH
+
+      - name: Upload docker-compose-prod.yml to AWS EC2 Instance
+        run: |
+          scp -i eic_key -o IdentitiesOnly=yes docker-compose-prod.yml \
+          "$EC2_USER"@"$RAW":"$APP_DIR"/docker-compose-prod.yml
 
       - name: Create .env file
         run: |
