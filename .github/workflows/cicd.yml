@@ -22,9 +22,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: List files for debugging
-        run: ls -R
-
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/app:latest . -f Dockerfile-prod
 
@@ -136,10 +133,10 @@ jobs:
           sudo install -d  -o "$EC2_USER" -g "$EC2_USER" -m 755 "$APP_DIR"
           EOSH
 
-      - name: Upload docker-compose-prod.yml to AWS EC2 Instance
+      - name: Upload Dockerfile-prod and docker-compose-prod.yml to AWS EC2 Instance
         run: |
-          scp -i eic_key -o IdentitiesOnly=yes docker-compose-prod.yml \
-          "$EC2_USER"@"$RAW":"$APP_DIR"/docker-compose-prod.yml
+          scp -i eic_key -o IdentitiesOnly=yes Dockerfile-prod docker-compose-prod.yml \
+          "$EC2_USER"@"$RAW":"$APP_DIR"/
 
       - name: Create .env file
         run: |
