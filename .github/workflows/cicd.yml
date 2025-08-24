@@ -74,6 +74,7 @@ jobs:
 
           set -euo pipefail
 
+          PACKAGES="git rsync curl docker.io"
           PM=""
           UPDATE=""
           INSTALL=""
@@ -106,18 +107,10 @@ jobs:
           echo "Using package manager: $PM"
           $UPDATE
 
-          if [ -n "$UPDATE" ] && [ -n "$INSTALL" ]; then
-              $UPDATE
+          $UPDATE_CMD
+          $INSTALL_CMD $PACKAGES
 
-            for pkg in git rsync curl docker.io; do
-              if ! command -v $pkg >/dev/null 2>&1; then
-                $INSTALL $pkg
-              fi
-            done
-          fi
-
-          if command -v systemctl >/dev/null 2>&1
-          then
+          if command -v systemctl >/dev/null 2>&1; then
             sudo systemctl enable --now docker || true
           fi
 
