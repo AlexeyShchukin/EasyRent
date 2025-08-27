@@ -1,11 +1,14 @@
+from src.listing.serializers.analytics import SearchHistorySerializer
 from src.listing.serializers.booking import (
     BookingSerializer,
-    BookingCreateSerializer
+    BookingCreateSerializer,
+    BookingCalendarSerializer
 )
 from src.listing.serializers.listing import (
     ListingListSerializer,
     ListingCreateUpdateSerializer,
-    ListingDetailSerializer
+    ListingDetailSerializer,
+    PopularListingSerializer
 )
 
 from src.listing.serializers.review import ReviewSerializer
@@ -16,5 +19,8 @@ __all__ = [
     'ListingDetailSerializer',
     'BookingCreateSerializer',
     'BookingSerializer',
-    'ReviewSerializer'
+    'BookingCalendarSerializer',
+    'ReviewSerializer',
+    'PopularListingSerializer',
+    'SearchHistorySerializer'
 ]

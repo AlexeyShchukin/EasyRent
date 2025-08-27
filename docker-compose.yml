@@ -1,7 +1,8 @@
+name: easy_rent_final
 services:
   db:
     image: mysql:8.0
-    container_name: easyrent_db
+    container_name: easy_rent_db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
@@ -12,14 +13,14 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h ${DB_HOST} -p${DB_PASSWORD} || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h db -p${DB_PASSWORD} || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   app:
     build: .
-    container_name: easyrent_app
+    container_name: easy_rent_app
     env_file:
       - .env
     ports:
@@ -35,11 +36,19 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 1G
+
+  worker:
+    build: .
+    container_name: easy_rent_worker
+    command: python manage.py process_tasks
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - .:/app
 
 volumes:
   mysql_data:
