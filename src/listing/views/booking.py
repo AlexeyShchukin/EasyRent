@@ -14,7 +14,11 @@ from src.exceptions.exceptions import (
 )
 from src.listing.models import Booking, Listing
 from src.listing.permissions import IsRenter, IsOwnerOfBookingListing
-from src.listing.serializers import BookingSerializer, BookingCreateSerializer
+from src.listing.serializers import (
+    BookingSerializer,
+    BookingCreateSerializer,
+    BookingCalendarSerializer
+)
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -24,18 +28,38 @@ class BookingViewSet(viewsets.ModelViewSet):
     )
 
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action in ['create', 'update', 'partial_update']:
             return BookingCreateSerializer
+
+        listing_pk = self.kwargs.get('listing_pk')
+        user = self.request.user
+        my_param = self.request.query_params.get('my') == 'true'
+        is_renter = user.groups.filter(name='Renter').exists()
+
+        is_public_request = not user.is_authenticated or (
+                is_renter and not my_param
+        )
+        if self.action == 'list' and listing_pk and is_public_request:
+            return BookingCalendarSerializer
+
         return BookingSerializer
 
     def get_permissions(self):
         """
         Sets permissions based on the action and user role.
         """
-        if self.action in ['list', 'retrieve', 'update', 'partial_update']:
+        if self.action in ['list']:
+            self.permission_classes = [AllowAny]
+        elif self.action in ['retrieve']:
             self.permission_classes = [IsAuthenticated]
 
-        elif self.action in ['create', 'cancel']:
+        elif self.action in [
+            'create',
+            'cancel',
+            'destroy',
+            'update',
+            'partial_update'
+        ]:
             self.permission_classes = [IsRenter]
 
         elif self.action in ['confirm', 'reject', 'complete']:
@@ -49,7 +73,8 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         """
-        Prevents direct modification of the booking status.
+        Prevents direct modification of the booking status
+        by PUT and PATCH methods.
         """
         if 'status' in serializer.validated_data:
             raise serializers.ValidationError(
@@ -60,23 +85,44 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filters bookings based on user role.
-        Landlords can see bookings for their listings.
-        Renters can see their own bookings.
         """
         user = self.request.user
-
         listing_pk = self.kwargs.get('listing_pk')
+        my_param = self.request.query_params.get('my') == 'true'
+        is_renter = user.groups.filter(name='Renter').exists()
+        is_landlord = user.groups.filter(name='Landlord').exists()
 
-        if user.is_authenticated:
+        if self.action == 'retrieve':
+            if is_renter:
+                return self.queryset.filter(renter=user)
+            elif is_landlord:
+                return self.queryset.filter(listing__owner=user)
+            return self.queryset.none()
+
+        if self.action in ['update', 'partial_update']:
+            if is_renter:
+                return self.queryset.filter(renter=user)
+            return self.queryset.none()
+
+        if listing_pk:
+            if is_landlord:
+                return self.queryset.filter(
+                    listing_id=listing_pk, listing__owner=user
+                )
+            elif my_param and is_renter:
+                return self.queryset.filter(
+                    listing_id=listing_pk,
+                    renter=user
+                )
+            else:
+                return self.queryset.filter(
+                    listing_id=listing_pk,
+                    status=Booking.BookingStatus.CONFIRMED
+                )
+        else:
             if user.groups.filter(name='Renter').exists():
                 return self.queryset.filter(renter=user)
-
-            if user.groups.filter(name='Landlord').exists():
-                if listing_pk:
-                    return self.queryset.filter(
-                        listing_id=listing_pk,
-                        listing__owner=user
-                    )
+            elif user.groups.filter(name='Landlord').exists():
                 return self.queryset.filter(listing__owner=user)
 
         return self.queryset.none()
@@ -87,11 +133,16 @@ class BookingViewSet(viewsets.ModelViewSet):
         to access the Listing instance.
         """
         context = super().get_serializer_context()
-        if self.action == 'create':
-            listing_id = self.kwargs.get('listing_pk')
-            if listing_id:
-                listing = get_object_or_404(Listing, pk=listing_id)
+        if self.action in ['create', 'update', 'partial_update']:
+            listing_pk = self.kwargs.get('listing_pk')
+
+            if self.action == 'create' and listing_pk:
+                listing = get_object_or_404(Listing, pk=listing_pk)
                 context['listing'] = listing
+
+            elif self.action in ['update', 'partial_update']:
+                booking = self.get_object()
+                context['listing'] = booking.listing
         return context
 
     def perform_create(self, serializer):

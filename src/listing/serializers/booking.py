@@ -73,3 +73,13 @@ class BookingSerializer(serializers.ModelSerializer):
             'listing'
         )
         read_only_fields = ('id',)
+
+
+class BookingCalendarSerializer(serializers.ModelSerializer):
+    """
+    Serializer for displaying dates of confirmed bookings on the calendar.
+    """
+    class Meta:
+        model = Booking
+        fields = ('start_date', 'end_date')
+        read_only_fields = ['start_date', 'end_date']

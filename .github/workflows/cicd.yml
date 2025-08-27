@@ -2,7 +2,7 @@ name: CI/CD Workflow (DockerHub + AWS EC2 via EIC)
 
 on:
   push:
-    branches: [main]
+    branches: [prod]
 
 concurrency:
   group: deploy-main
