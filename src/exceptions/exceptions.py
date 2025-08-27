@@ -11,27 +11,25 @@ class ErrorType(str, Enum):
     AUTHENTICATION_ERROR = "authentication_error"
     INVALID_STATUS = "invalid_status"
     UNKNOWN_ERROR = "unknown_error"
+    INTEGRITY_ERROR = "integrity_error"
 
 
 class BookingStatusError(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = 'The booking status does not allow this action.'
     default_code = 'invalid_booking_status'
+    error_type = ErrorType.INVALID_STATUS
 
 
 class BookingOwnershipError(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = 'You do not have permission to perform this action on this booking.'
     default_code = 'permission_denied'
-
-
-class InvalidBookingActionError(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = 'The booking action cannot be performed.'
-    default_code = 'invalid_booking_action'
+    error_type = ErrorType.PERMISSION_ERROR
 
 
 class BookingRelationshipError(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = 'The booking does not belong to the specified listing.'
     default_code = 'invalid_relationship'
+    error_type = ErrorType.VALIDATION_ERROR

@@ -92,7 +92,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         is_renter = user.groups.filter(name='Renter').exists()
         is_landlord = user.groups.filter(name='Landlord').exists()
 
-        if self.action == 'retrieve':
+        if self.action in ['retrieve', 'cancel']:
             if is_renter:
                 return self.queryset.filter(renter=user)
             elif is_landlord:
@@ -227,7 +227,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         if booking.status != Booking.BookingStatus.PENDING:
             raise BookingStatusError(
-                "Only pending bookings can be confirmed."
+                "Only pending bookings can be rejected."
             )
 
         booking.status = Booking.BookingStatus.REJECTED

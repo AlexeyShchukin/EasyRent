@@ -2,46 +2,54 @@ import logging
 import traceback
 
 from django.conf import settings
+from rest_framework.exceptions import APIException
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.utils import IntegrityError
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
-from src.exceptions.exceptions import (
-    BookingOwnershipError,
-    BookingStatusError,
-    ErrorType,
-    BookingRelationshipError
-)
+from src.exceptions.exceptions import ErrorType
 
 logger = logging.getLogger(__name__)
 
-CUSTOM_ERROR_MAPPING = {
-    BookingRelationshipError: (
-        status.HTTP_400_BAD_REQUEST,
-        ErrorType.VALIDATION_ERROR
-    ),
-    BookingStatusError: (
-        status.HTTP_400_BAD_REQUEST,
-        ErrorType.INVALID_STATUS
-    ),
-    BookingOwnershipError: (
-        status.HTTP_403_FORBIDDEN,
-        ErrorType.PERMISSION_ERROR
-    ),
-}
-
 
 def custom_exception_handler(exc, context):
-    if type(exc) in CUSTOM_ERROR_MAPPING:
-        http_status, error_type = CUSTOM_ERROR_MAPPING[type(exc)]
+    if isinstance(exc, APIException) and hasattr(exc, "error_type"):
         return Response(
             {
-                'detail': str(exc),
-                'error_type': error_type.value
+                "detail": exc.detail,
+                "error_type": exc.error_type.value
             },
-            status=http_status
+            status=exc.status_code
+        )
+
+    if isinstance(exc, DRFValidationError):
+        return Response(
+            {
+                "detail": exc.detail,
+                "error_type": ErrorType.VALIDATION_ERROR.value
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if isinstance(exc, DjangoValidationError):
+        return Response(
+            {
+                "detail": str(exc),
+                "error_type": ErrorType.VALIDATION_ERROR.value
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if isinstance(exc, IntegrityError):
+        return Response(
+            {
+                "detail": str(exc),
+                "error_type": ErrorType.INTEGRITY_ERROR.value
+            },
+            status=status.HTTP_400_BAD_REQUEST
         )
 
     response = exception_handler(exc, context)
