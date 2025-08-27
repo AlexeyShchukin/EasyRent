@@ -7,6 +7,7 @@ class ListingDetailSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)
     rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
     reviews_count = serializers.IntegerField(read_only=True)
+    views_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Listing
@@ -21,6 +22,7 @@ class ListingDetailSerializer(serializers.ModelSerializer):
             'is_active',
             'rating',
             'reviews_count',
+            'views_count',
             'owner_username',
             'created_at',
             'updated_at',
@@ -65,3 +67,22 @@ class ListingCreateUpdateSerializer(serializers.ModelSerializer):
             'property_type',
             'is_active',
         )
+
+
+class PopularListingSerializer(serializers.ModelSerializer):
+    """
+    Serializer for displaying popular listings with their view count.
+    """
+    rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = Listing
+        fields = (
+            'id',
+            'title',
+            'price',
+            'location',
+            'rating',
+            'number_of_rooms',
+        )
+        read_only_fields = ('id',)

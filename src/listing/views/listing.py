@@ -1,8 +1,11 @@
+from django.db.models import Count
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
-
+from django.contrib.sessions.backends.base import UpdateError
+from django.db.models.functions import Coalesce
 from rest_framework.permissions import AllowAny
+
 from src.listing.models import Listing
 from src.listing.permissions import IsOwner, IsLandlordOrReadOnly
 from src.listing.serializers import (
@@ -10,6 +13,7 @@ from src.listing.serializers import (
     ListingCreateUpdateSerializer,
     ListingDetailSerializer
 )
+from src.listing.tasks import record_search_query, record_listing_view
 
 
 class ListingViewSet(viewsets.ModelViewSet):
@@ -24,7 +28,7 @@ class ListingViewSet(viewsets.ModelViewSet):
         'property_type': ['exact'],
     }
     search_fields = ['title', 'description']
-    ordering_fields = ['price', 'created_at', 'reviews_count']
+    ordering_fields = ['price', 'created_at', 'reviews_count', 'rating']
 
     def get_permissions(self):
         """
@@ -54,7 +58,18 @@ class ListingViewSet(viewsets.ModelViewSet):
         """
         If query param 'my' is present and True,
         return only the current user's listings.
+        Calculates views for retrieve action.
         """
+        queryset = self.queryset
+
+        if self.action == 'retrieve':
+            queryset = queryset.annotate(
+                views_count=Count(Coalesce(
+                    'views__user',
+                    'views__session_id'
+                ), distinct=True)
+            )
+
         current_user = self.request.user
 
         is_authenticated = current_user.is_authenticated
@@ -64,10 +79,33 @@ class ListingViewSet(viewsets.ModelViewSet):
             my_param = self.request.query_params.get("my")
 
             if my_param and my_param.lower() == "true":
-                return self.queryset.filter(owner=current_user)
+                return queryset.filter(owner=current_user)
 
-        return self.queryset.filter(is_active=True)
+        return queryset.filter(is_active=True)
 
     def perform_create(self, serializer):
         """Associates the created object with the current user."""
         serializer.save(owner=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        """Lists listings and records the search query."""
+        query = request.query_params.get('search')
+        if query:
+            user_id = request.user.id if request.user.is_authenticated else None
+            record_search_query(user_id, query)
+
+        return super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieves a single listing and records a view."""
+        instance = self.get_object()
+        user_id = request.user.id if request.user.is_authenticated else None
+
+        try:
+            request.session.save()
+        except UpdateError:
+            request.session.create()
+        session_id = request.session.session_key
+        record_listing_view(user_id, str(instance.id), session_id)
+
+        return super().retrieve(request, *args, **kwargs)

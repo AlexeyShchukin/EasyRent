@@ -77,6 +77,8 @@ class LogoutUserAPIView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
 
+        request.session.flush()
+
         response.delete_cookie('access')
         response.delete_cookie('refresh')
         return response
